@@ -53,6 +53,35 @@ cd web3-data-playground
 
 ---
 
+## 🎯 实战案例
+
+### Uniswap V3 日交易量排行
+
+查询每个 Uniswap V3 池子过去 7 天的交易量、交易次数和独立交易地址数，按日排名。
+
+**核心表：** `uniswap_v3_ethereum.Pair_evt_Swap`、`uniswap_v3_ethereum.Factory_evt_PoolCreated`
+
+📄 完整查询 → [`dune-queries/defi/uniswap_v3_daily_volume.sql`](dune-queries/defi/uniswap_v3_daily_volume.sql)
+
+```sql
+WITH swap_volume AS (
+  SELECT
+    DATE_TRUNC('day', evt_block_time) AS day,
+    contract_address AS pool,
+    COUNT(*) AS swap_count,
+    SUM(amountUSD) AS volume_usd,
+    COUNT(DISTINCT sender) AS unique_traders
+  FROM uniswap_v3_ethereum.Pair_evt_Swap
+  WHERE evt_block_time >= CURRENT_DATE - INTERVAL '7' DAY
+  GROUP BY 1, 2
+)
+SELECT ...
+```
+
+**技巧：** `amountUSD` 由 Dune 预计算，无需自行接入预言机；始终用 `evt_block_time` 做分区裁剪。
+
+---
+
 ## 📚 资源
 
 - [Dune 官方文档](https://docs.dune.com)
